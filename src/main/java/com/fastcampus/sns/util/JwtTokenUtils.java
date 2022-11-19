@@ -11,6 +11,20 @@ import java.util.Date;
 
 public class JwtTokenUtils {
 
+    public static boolean isExpired(String token, String key) {
+        Date expiredDate = extractClaims(token, key).getExpiration();
+        return expiredDate.before(new Date());
+    }
+
+    public static String getUserName(String token, String key) {
+        return extractClaims(token, key).get("userName", String.class);
+    }
+
+    private static Claims extractClaims(String token, String key) {
+        return Jwts.parserBuilder().setSigningKey(getKey(key))
+                .build().parseClaimsJws(token).getBody();
+    }
+
     public static String generateToken(String userName, String key, long expiredTimeMs) {
         // key 암호화 키
         Claims claims = Jwts.claims();
