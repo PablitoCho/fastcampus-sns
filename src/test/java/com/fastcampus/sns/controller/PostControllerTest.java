@@ -221,7 +221,7 @@ public class PostControllerTest {
     }
 
     @Test
-    @WithAnonymousUser // 로그인된(인증된) 유저
+    @WithAnonymousUser
     void my_feed_list_failure_not_login() throws Exception {
         //mocking
         when(postService.my(any(), any())).thenReturn(Page.empty());
@@ -230,4 +230,36 @@ public class PostControllerTest {
                 ).andDo(print())
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @WithMockUser
+    void like_success() throws Exception {
+        mockMvc.perform(post("/api/v1/posts/1/likes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                ).andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void like_failure_not_login() throws Exception {
+        mockMvc.perform(post("/api/v1/posts/1/likes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                ).andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser
+    void like_failure_no_such_post() throws Exception {
+        // mocking
+        doThrow(new SnsApplicationException(ErrorCode.POST_NOT_FOUND))
+                .when(postService).like(any(), any());
+
+        mockMvc.perform(post("/api/v1/posts/1/likes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                ).andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
 }

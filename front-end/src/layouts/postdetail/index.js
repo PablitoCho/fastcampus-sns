@@ -59,7 +59,7 @@ function PostDetail() {
   console.log(state);
   const [page, setPage] = useState(0);
   const [title, setTitle] = useState(state.title);
-  const [writer, setWriter] = useState(state.user.userName);
+  const [writer, setWriter] = useState(state.user.name);
   const [body, setBody] = useState(state.body);
   const [id, setId] = useState(state.id);
 
