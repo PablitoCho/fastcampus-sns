@@ -67,6 +67,9 @@ public class PostService {
 
         // delete Post
         postEntityRepository.delete(postEntity);
+        // 삭제되는 Post에 달린 comment와 like도 함께 삭제
+        likeEntityRepository.deleteAllByPost(postEntity);
+        commentEntityRepository.deleteAllByPost(postEntity);
     }
 
     public Page<Post> list(Pageable pageable) {
@@ -100,7 +103,7 @@ public class PostService {
         ));
     }
 
-    public int likeCount(Integer postId) {
+    public long likeCount(Integer postId) {
         // null일 필요가 없으므로 Integer가 아니라 null로 사용해도 괜찮음.
         PostEntity postEntity = getPostEntityOrException(postId);
 

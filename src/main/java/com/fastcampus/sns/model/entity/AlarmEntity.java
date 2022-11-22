@@ -28,10 +28,17 @@ public class AlarmEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Alarm을 받는 사람
-    @ManyToOne
+    /*
+     * ManyToOne default fetch type : EAGER (비효율적). 즉시 join된 데이터를 모두 가져온다(사용여부와 상관없이)
+     * fetch type을 Lazy로 바꾼다면? 일단 alarm 정보만 가져온 다음 join된 user 정보는 실제 사용될때 가져온다.
+     * (실제 user정보가 필요할 때, 접근을 할때 가져온다.)
+     *
+     * But, Lazy로 바꾸는 것이 N+1 문제의 근본적인 해결책은 아님. 단지 불필요한 query가 안 나갈뿐...
+     * Repository에서 @Query annotation을 통해 불필요한 데이터를 가져오지 않도록(N+1문제가 발생하지 않도록) 수정하는 것이 근본적인 해결책에 더 가까움.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private UserEntity user;
+    private UserEntity user; // Alarm을 받는 사람 (발생시킨 사람 x)
 
     @Enumerated(EnumType.STRING)
     private AlarmType alarmType;
