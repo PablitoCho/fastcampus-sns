@@ -6,6 +6,7 @@ import com.fastcampus.sns.model.Alarm;
 import com.fastcampus.sns.model.User;
 import com.fastcampus.sns.model.entity.UserEntity;
 import com.fastcampus.sns.repository.AlarmEntityRepository;
+import com.fastcampus.sns.repository.UserCacheRepository;
 import com.fastcampus.sns.repository.UserEntityRepository;
 import com.fastcampus.sns.util.JwtTokenUtils;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,8 @@ public class UserService {
 
     private final UserEntityRepository userEntityRepository;
     private final AlarmEntityRepository alarmEntityRepository;
-
     private final BCryptPasswordEncoder encoder;
+    private final UserCacheRepository userCacheRepository;
 
     @Value("${jwt.secret-key}")
     private String secretKey;
@@ -48,13 +49,17 @@ public class UserService {
 
     // TODO : implement
     public String login(String userName, String password)  {
-        // 1. 회원가입 여부 확인
-        UserEntity userEntity = userEntityRepository
-                .findByUserName(userName)
-                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not found", userName)));
+        // 1-1. 회원가입 여부 확인
+        User user = loadUserByUserName(userName);
+//                userEntityRepository
+//                .findByUserName(userName)
+//                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not found", userName)));
+
+        // 1-2. 캐시에 데이터 올리기
+        userCacheRepository.setUser(user);
 
         // 2. 회원이 존재한다면, 비밀번호 확인
-        if(!encoder.matches(password, userEntity.getPassword())){
+        if(!encoder.matches(password, user.getPassword())){
 //        if(!userEntity.getPassword().equals(password)) {
             throw new SnsApplicationException(ErrorCode.INVALID_PASSWORD);
         }
@@ -67,10 +72,13 @@ public class UserService {
     }
 
     public User loadUserByUserName(String userName) {
-        return userEntityRepository.findByUserName(userName).map(User::fromEntity)
-                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s user not found.", userName)));
+        return userCacheRepository
+                    .getUser(userName) // 캐시에 없는 경우 null
+                    .orElseGet( // 캐시에 없는 경우 DB에서 조회
+                        () -> userEntityRepository.findByUserName(userName).map(User::fromEntity)
+                                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s user not found.", userName)))
+                    );
     }
-
 
     public Page<Alarm> alarmList(Integer userId, Pageable pageable) {
         return alarmEntityRepository.findAllByUserId(userId, pageable).map(Alarm::fromEntity);
