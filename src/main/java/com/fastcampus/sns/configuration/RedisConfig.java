@@ -37,9 +37,9 @@ public class RedisConfig {
      * 반면에 Comment, Like, Post 등은 수정의 여지도 높으며 삭제 등의 변경이 잦다. User에 비해 접근 빈도도 낮다.
      */
     @Bean // Redis Template(command 수행) Bean으로 등록
-    public RedisTemplate<String, User> userRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    public RedisTemplate<String, User> userRedisTemplate() {
         RedisTemplate<String, User> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory);
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<User>(User.class));
         return redisTemplate;

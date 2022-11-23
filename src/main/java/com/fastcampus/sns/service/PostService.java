@@ -31,6 +31,7 @@ public class PostService {
 
     private final AlarmEntityRepository alarmEntityRepository;
 
+    private final AlarmService alarmService;
 
     @Transactional
     public void create(String title, String body, String userName) {
@@ -96,11 +97,14 @@ public class PostService {
         likeEntityRepository.save(LikeEntity.of(userEntity, postEntity));
 
         // like 누를 때 alarm 발생
-        alarmEntityRepository.save(AlarmEntity.of(
-            postEntity.getUser(),
-            AlarmType.NEW_LIKE_ON_POST,
-            new AlarmArgs(userEntity.getId(), postEntity.getId())
+        AlarmEntity alarmEntity = alarmEntityRepository.save(AlarmEntity.of(
+                postEntity.getUser(),
+                AlarmType.NEW_LIKE_ON_POST,
+                new AlarmArgs(userEntity.getId(), postEntity.getId())
         ));
+
+        // Alarm SSE 발생(브라우저에게 alarm이 갱신되었으니 refresh하도록)
+        alarmService.send(alarmEntity.getId(), postEntity.getUser().getId());
     }
 
     public long likeCount(Integer postId) {
@@ -122,11 +126,14 @@ public class PostService {
         commentEntityRepository.save(CommentEntity.of(userEntity, postEntity, comment));
 
         // comment 저장시 alarm 발생
-        alarmEntityRepository.save(AlarmEntity.of(
+        AlarmEntity alarmEntity = alarmEntityRepository.save(AlarmEntity.of(
                 postEntity.getUser(), // Post를 작성한 user가 alarm을 받는다.
                 AlarmType.NEW_COMMENT_ON_POST,
                 new AlarmArgs(userEntity.getId(), postEntity.getId()))
         );
+
+        // Alarm SSE 발생(브라우저에게 alarm이 갱신되었으니 refresh하도록)
+        alarmService.send(alarmEntity.getId(), postEntity.getUser().getId());
     }
 
     public Page<Comment> getComments(Integer postId, Pageable pageable) {

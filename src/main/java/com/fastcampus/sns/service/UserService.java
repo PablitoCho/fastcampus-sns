@@ -73,11 +73,11 @@ public class UserService {
 
     public User loadUserByUserName(String userName) {
         return userCacheRepository
-                    .getUser(userName) // 캐시에 없는 경우 null
-                    .orElseGet( // 캐시에 없는 경우 DB에서 조회
-                        () -> userEntityRepository.findByUserName(userName).map(User::fromEntity)
-                                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s user not found.", userName)))
-                    );
+                .getUser(userName) // 캐시에 없는 경우 null
+                .orElseGet( // 캐시에 없는 경우 DB에서 조회
+                    () -> userEntityRepository.findByUserName(userName).map(User::fromEntity)
+                            .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s user not found.", userName)))
+                );
     }
 
     public Page<Alarm> alarmList(Integer userId, Pageable pageable) {

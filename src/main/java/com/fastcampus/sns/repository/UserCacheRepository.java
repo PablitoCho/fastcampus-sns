@@ -25,21 +25,20 @@ public class UserCacheRepository {
 
     public void setUser(User user) {
         String key = getKey(user.getUsername());
-        log.info("Set User to Redis {}:{}", key, user);
-      userRedisTemplate.opsForValue().set(key, user, USER_CACHE_TTL); //setIfAbsent를 걸어도 되고, TTL이 있으니 그냥 Set을 사용해도 큰 문제없다.
+        log.info("Set User to Redis {}({})", key, user);
+        userRedisTemplate.opsForValue().set(key, user, USER_CACHE_TTL);
     }
 
     public Optional<User> getUser(String userName) {
-        String key = getKey(userName);
-        User user = userRedisTemplate.opsForValue().get(key);
-        log.info("Get data from Redis {}:{}", key, user);
-        return Optional.ofNullable(user);
+        User data = userRedisTemplate.opsForValue().get(getKey(userName));
+        log.info("Get User from Redis {}", data);
+        return Optional.ofNullable(data);
     }
 
     // User DB에 가장 많이 접근하는 filter에서 key를 userName으로 사용 > redis에서 key로 사용
     // 또한, 나중에 다른 정보도 캐싱할 수 있으므로 캐싱하는 데이터에 따라 prefix를 붙이는 것이 필요
     private String getKey(String userName) {
-        return "USER:" + userName;
+        return "UID:" + userName;
     }
 
 }
