@@ -2,7 +2,13 @@ package com.fastcampus.sns.service;
 
 import com.fastcampus.sns.exception.ErrorCode;
 import com.fastcampus.sns.exception.SnsApplicationException;
+import com.fastcampus.sns.model.AlarmArgs;
+import com.fastcampus.sns.model.AlarmType;
+import com.fastcampus.sns.model.entity.AlarmEntity;
+import com.fastcampus.sns.model.entity.UserEntity;
+import com.fastcampus.sns.repository.AlarmEntityRepository;
 import com.fastcampus.sns.repository.EmitterRepository;
+import com.fastcampus.sns.repository.UserEntityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +25,8 @@ public class AlarmService {
     private final static String ALARM_NAME = "alarm";
 
     private final EmitterRepository emitterRepository;
+    private final AlarmEntityRepository alarmEntityRepository;
+    private final UserEntityRepository userEntityRepository;
 
     public SseEmitter connectAlarm(Integer userId) {
         // SseEmitter instance는 브라우저 connect당 하나의 instance가 생긴다.
@@ -39,19 +47,28 @@ public class AlarmService {
         return sseEmitter;
     }
 
-    public void send(Integer alarmId, Integer userId) {
-        emitterRepository.get(userId)
+//    public void send(Integer alarmId, Integer userId) {
+    public void send(AlarmType type, AlarmArgs args, Integer receiverUserId) {
+        UserEntity user = userEntityRepository.findById(receiverUserId).orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND));
+        // alarm save
+        AlarmEntity alarmEntity = alarmEntityRepository.save(AlarmEntity.of(
+                user, // Post를 작성한 user가 alarm을 받는다.
+                type,
+                args)
+        );
+
+        emitterRepository.get(receiverUserId)
             .ifPresentOrElse(sseEmitter -> {
                 try {
                     sseEmitter.send(
                             SseEmitter.event()
-                                    .id(alarmId.toString())
+                                    .id(alarmEntity.getId().toString())
                                     .name(ALARM_NAME)
                                     .data("new alarm")
                     );
                 } catch (IOException e) {
                     // 에러 발생시 해당 emitter를 캐시로 들고 있을 필요가 없음(삭제)
-                    emitterRepository.delete(userId);
+                    emitterRepository.delete(receiverUserId);
                     throw new SnsApplicationException(ErrorCode.ALARM_CONNECT_ERROR);
                 }
             }, () -> log.info("No emitter found")); // 알람을 받는 User가 브라우저에 접속하지 않은 경우 emitter가 존재하지 않음.(subscription을 안 했으므로)

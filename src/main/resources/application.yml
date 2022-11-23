@@ -18,3 +18,26 @@ jwt:
   token.expired-time-ms: 2592000000 # 30 days
 
 spring.redis.url: redis://:p3cca26ce5f73419daa996286fdd90c54d47acc7fe70cecc9224666dd824d504e@ec2-35-169-94-25.compute-1.amazonaws.com:28659
+
+spring:
+  kafka:
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: SCRAM-SHA-256
+      sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="tb45upa7" password="kGBb4o5k9c44dkMaRgeSrE1TlE7ZGtq0";
+    consumer:
+      properties.spring.json.trusted.packages: "*" #Json으로 변환할 때, 어떤 package를 허용할지 -> 모두!
+      bootstrap-servers: dory-01.srvs.cloudkafka.com:9094, dory-02.srvs.cloudkafka.com:9094, dory-03.srvs.cloudkafka.com:9094
+      group-id: alarm
+      auto-offset-reset: lastest #producing이 되고 있는 topic에 새로운 consumer group이 붙으면 처음부터 읽을지, 최신 message부터 읽을지
+      key-deserializer: org.apache.kafka.common.serialization.IntegerDeserializer #user별로 받는 event의 순서를 보장하기 위해 UserId(int)를 key로 사용
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    producer:
+      bootstrap-servers: dory-01.srvs.cloudkafka.com:9094, dory-02.srvs.cloudkafka.com:9094, dory-03.srvs.cloudkafka.com:9094
+      key-serializer: org.apache.kafka.common.serialization.IntegerSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties.enable.idempotence: false
+    listener:
+      ack-mode: MANUAL #수동으로 ack를 날린다.
+    topic:
+      alarm: tb45upa7-alarm

@@ -8,6 +8,8 @@ import com.fastcampus.sns.model.AlarmType;
 import com.fastcampus.sns.model.Comment;
 import com.fastcampus.sns.model.Post;
 import com.fastcampus.sns.model.entity.*;
+import com.fastcampus.sns.model.event.AlarmEvent;
+import com.fastcampus.sns.producer.AlarmProducer;
 import com.fastcampus.sns.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,7 @@ public class PostService {
     private final AlarmEntityRepository alarmEntityRepository;
 
     private final AlarmService alarmService;
+    private final AlarmProducer alarmProducer;
 
     @Transactional
     public void create(String title, String body, String userName) {
@@ -104,7 +107,12 @@ public class PostService {
         ));
 
         // Alarm SSE 발생(브라우저에게 alarm이 갱신되었으니 refresh하도록)
-        alarmService.send(alarmEntity.getId(), postEntity.getUser().getId());
+//        alarmService.send(alarmEntity.getId(), postEntity.getUser().getId());
+        alarmProducer.send(new AlarmEvent(
+                postEntity.getUser().getId(),
+                AlarmType.NEW_LIKE_ON_POST,
+                new AlarmArgs(userEntity.getId(), postEntity.getId()))
+        );
     }
 
     public long likeCount(Integer postId) {
@@ -133,7 +141,12 @@ public class PostService {
         );
 
         // Alarm SSE 발생(브라우저에게 alarm이 갱신되었으니 refresh하도록)
-        alarmService.send(alarmEntity.getId(), postEntity.getUser().getId());
+//        alarmService.send(alarmEntity.getId(), postEntity.getUser().getId());
+        alarmProducer.send(new AlarmEvent(
+                postEntity.getUser().getId(),
+                AlarmType.NEW_COMMENT_ON_POST,
+                new AlarmArgs(userEntity.getId(), postEntity.getId()))
+        );
     }
 
     public Page<Comment> getComments(Integer postId, Pageable pageable) {
